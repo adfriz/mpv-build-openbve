@@ -30,7 +30,6 @@ The table below reflects the pins in `VERSIONS` at release time.
 | harfbuzz (text shaping, via libass) | distro/brew | MIT | bundled |
 | fribidi (bidi text, via libass) | distro/brew | LGPL-2.1+ | bundled |
 | fontconfig (font discovery, via libass) | distro/brew | MIT | bundled |
-| lcms2 (color management) | distro/brew | MIT | bundled |
 | transitive support libs (expat, libpng, zlib, brotli, …) | distro/brew | MIT / BSD / zlib | bundled as needed |
 | compiler runtime (libstdc++, libgcc) | toolchain | GPL-3.0 **with GCC Runtime Library Exception** (redistributable) | bundled (Linux) / static (Windows) |
 | `mpv/client.h` header | same as mpv | ISC | header only |
@@ -49,7 +48,7 @@ Windows: single self-contained `libmpv-2.dll` + `libmpv.dll.a` import lib
 `--enable-gpl`, `--enable-nonfree`, all encoders/muxers/programs
 (`--disable-encoders --disable-muxers --disable-programs`).
 mpv-side: `dvdnav`, `rubberband`, `openal`, `jack`, `oss-audio`, `caca`,
-`lua`, `javascript`, `libarchive`, `libbluray`, `uchardet`, `vulkan`,
+`lua`, `javascript`, `libarchive`, `libbluray`, `uchardet`, `lcms2`, `vulkan`,
 `spirv-cross`, `shaderc`, the `mpv` CLI (`-Dcplayer=false`).
 
 ## Sources

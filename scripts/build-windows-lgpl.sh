@@ -38,6 +38,9 @@ git_fetch_pin "$WINBUILD_ENGINE_REPO" "$WINBUILD_ENGINE_REF" "$ENGINE"
 cd "$ENGINE"
 git reset -q --hard HEAD
 git clean -qdff -e build64 -e src_packages -e install_rustup -e clang_root || true
+# git am creates commits: runners have no identity, set a repo-local one.
+git config user.email "obve-mpv-builds@local"
+git config user.name "obve-mpv-builds"
 
 # 3. Engine compat patches, then our LGPL patch (same file as upstream root).
 for p in "$PATCHSRC"/patch/*.patch; do

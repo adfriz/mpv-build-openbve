@@ -45,7 +45,7 @@ FFMPEG_CONF=(
   --disable-debug
   --enable-runtime-cpudetect
   --enable-libass --enable-libfreetype --enable-libfribidi --enable-libfontconfig
-  --enable-libharfbuzz --enable-libdav1d --enable-libplacebo --enable-lcms2
+  --enable-libharfbuzz --enable-libdav1d --enable-libplacebo
   --enable-version3
   # NOTE: intentionally NO --enable-gpl --enable-nonfree --enable-libx264
   # --enable-libx265 --enable-librubberband --enable-libdavs2
@@ -86,7 +86,7 @@ meson setup "$BUILD_DIR/mpv" "$MPV_SRC" \
   -Dpdf-build=disabled -Dtests=disabled \
   -Dlua=disabled -Djavascript=disabled \
   -Dlibarchive=disabled -Dlibbluray=disabled -Duchardet=disabled \
-  -Dlcms2=enabled -Dgl=auto \
+  -Dlcms2=disabled -Dgl=auto \
   --force-fallback-for=libplacebo \
   --prefix="$INSTALL_DIR"
 meson compile -C "$BUILD_DIR/mpv" -j"$JOBS"
