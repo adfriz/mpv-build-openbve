@@ -130,10 +130,12 @@ jobs:
           mkdir -p winlogs
           LOGS=$(find build/winbuild/build64 \( -path "*stamp/*.log" -o -name "config.log" -o -name "meson-log.txt" \) -type f 2>/dev/null | sort)
           echo "$LOGS" > winlogs/files.txt || true
-          # NOTE: *-err.log files print FIRST (they hold the actual failure)
-          # with longer tails; the old head/print caps used to bury them.
-          { echo "$LOGS" | grep -E -- "-err\.log$" || true; echo "$LOGS" | grep -vE -- "-err\.log$" || true; } | while IFS= read -r f; do
-            n=15; case "$f" in *-err.log) n=80;; esac
+          # NOTE: *-err.log files print FIRST (they hold the actual failure),
+          # then toolchain config.log files (they hold the failed compile
+          # test, e.g. crt-configure's header check), then everything else.
+          # The old head/print caps used to bury both.
+          { echo "$LOGS" | grep -E -- "-err\.log$" || true; echo "$LOGS" | grep -E -- "toolchain/.*config\.log$" || true; echo "$LOGS" | grep -vE -- "-err\.log$|toolchain/.*config\.log$" || true; } | while IFS= read -r f; do
+            n=15; case "$f" in *-err.log|*/config.log) n=80;; esac
             { echo "===== $f"; tail -n "$n" "$f"; echo; }
           done > winlogs/tails.txt || true
           wc -l winlogs/tails.txt || true

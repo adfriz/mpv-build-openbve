@@ -76,17 +76,9 @@ grep -H "^ *GIT_TAG" "$ENGINE"/packages/{ffmpeg,mpv}.cmake
 cp "$ENGINE/packages/ffmpeg.cmake" "$STAGING/ffmpeg-configure.txt"
 cp "$ENGINE/packages/mpv.cmake" "$STAGING/mpv-configure.txt"
 
-# 5. Configure (mirrors upstream build.sh gcc path, minus packaging).
-cmake -Wno-dev \
-  -DTARGET_ARCH=x86_64-w64-mingw32 \
-  -DCOMPILER_TOOLCHAIN="$COMPILER" \
-  -DSINGLE_SOURCE_LOCATION="$WORK/src_packages" \
-  -DRUSTUP_LOCATION="$WORK/install_rustup" \
-  -G Ninja -S "$ENGINE" -B "$BUILDD"
-
-ninja -C "$BUILDD" download || true
-# Toolchain: a restored cache entry may contain absolute paths from another
-# runner layout (poisoned). Verify the compiler actually COMPILES (not just
+# 5. Toolchain freshness check FIRST, before cmake configure (see below).
+# A restored cache entry may contain absolute paths from another runner
+# layout (poisoned). Verify the compiler actually COMPILES (not just
 # --version); otherwise wipe and rebuild instead of failing 40 minutes later
 # in dep configures.
 toolchain_ok() {
@@ -95,21 +87,43 @@ toolchain_ok() {
     echo 'int main(void){return 0;}' > "$WORK/hello.c" && \
     "$BUILDD/install/bin/cross-gcc" -o "$WORK/hello.exe" "$WORK/hello.c" >/dev/null 2>&1
 }
+NEED_GCC_BUILD=0
 if [[ "$COMPILER" == "gcc" ]]; then
   if ! toolchain_ok; then
     log "gcc toolchain missing or not runnable, (re)building"
     rm -rf "$BUILDD/install"
     # gcc-wrapper's build step creates symlinks inside install/bin/ but never
     # creates that dir itself. On a truly fresh tree the step fails with
-    # "failed to create symbolic link ... No such file or directory"
-    # (upstream only survives this via warm caches holding install/bin/).
+    # "failed to create symbolic link ... No such file or directory".
     mkdir -p "$BUILDD/install/bin" "$BUILDD/install/x86_64-w64-mingw32/lib"
-    ninja -C "$BUILDD" gcc && rm -rf "$BUILDD/toolchain"
-    toolchain_ok || fail "fresh gcc toolchain still not runnable"
+    NEED_GCC_BUILD=1
   else
     log "reusing working cached gcc toolchain"
   fi
 elif [[ "$COMPILER" == "clang" ]] && [[ ! "$(ls -A "$WORK/clang_root/bin/clang" 2>/dev/null)" ]]; then
+  NEED_CLANG_BUILD=1
+fi
+
+# 6. Configure (mirrors upstream build.sh gcc path, minus packaging).
+# NOTE ordering: this cmake step (re)creates the triplet compiler scripts
+# (x86_64-w64-mingw32-gcc et al.) in install/bin via configure_file, and
+# crt-configure needs them to find the cross compiler (its AC_CHECK_HEADER
+# [_mingw_mac.h] fails with "Please check if the mingw-w64 header set..."
+# when only the native gcc is found). The wipe above MUST come first:
+# wiping after cmake deletes those scripts with nothing recreating them.
+cmake -Wno-dev \
+  -DTARGET_ARCH=x86_64-w64-mingw32 \
+  -DCOMPILER_TOOLCHAIN="$COMPILER" \
+  -DSINGLE_SOURCE_LOCATION="$WORK/src_packages" \
+  -DRUSTUP_LOCATION="$WORK/install_rustup" \
+  -G Ninja -S "$ENGINE" -B "$BUILDD"
+
+ninja -C "$BUILDD" download || true
+if [[ "$COMPILER" == "gcc" && "$NEED_GCC_BUILD" == 1 ]]; then
+  ninja -C "$BUILDD" gcc || fail "ninja gcc failed (see toolchain logs + winbuild-logs artifact)"
+  rm -rf "$BUILDD/toolchain"
+  toolchain_ok || fail "fresh gcc toolchain still not runnable"
+elif [[ "$COMPILER" == "clang" && "${NEED_CLANG_BUILD:-0}" == 1 ]]; then
   ninja -C "$BUILDD" llvm && ninja -C "$BUILDD" llvm-clang
 fi
 if ninja -C "$BUILDD" -t targets all 2>/dev/null | grep -q "rustup: phony"; then
@@ -121,7 +135,7 @@ fi
 ninja -C "$BUILDD" update
 ninja -C "$BUILDD" mpv -j"$JOBS"
 
-# 6. Collect LGPL dev package (renamed by patch to mpv-dev-lgpl-*).
+# 7. Collect LGPL dev package (renamed by patch to mpv-dev-lgpl-*).
 DEV_DIR="$(ls -d "$BUILDD"/mpv-dev-lgpl-* 2>/dev/null | head -1)"
 [[ -n "${DEV_DIR:-}" ]] || fail "mpv-dev-lgpl-* not found after build"
 log "dev package: $DEV_DIR"
