@@ -88,6 +88,9 @@ if [[ ! -d "$MPV_SRC/subprojects/libplacebo" ]]; then
 fi
 
 # meson option names verified against mpv v0.41.0 meson.options.
+# macOS extra disables: swiftc can't see the libplacebo subproject's generated
+# config.h (bridging-header PCH fails). Swift is only used for NowPlaying /
+# TouchBar integration, unused by the decode-to-texture path.
 rm -rf "$BUILD_DIR/mpv"
 meson setup "$BUILD_DIR/mpv" "$MPV_SRC" \
   -Dgpl=false -Dcplayer=false -Dlibmpv=true -Ddefault_library=shared \
@@ -99,6 +102,7 @@ meson setup "$BUILD_DIR/mpv" "$MPV_SRC" \
   -Dlua=disabled -Djavascript=disabled \
   -Dlibarchive=disabled -Dlibbluray=disabled -Duchardet=disabled \
   -Dlcms2=disabled -Dgl=auto \
+  -Dswift-build=disabled -Dmacos-media-player=disabled -Dmacos-touchbar=disabled \
   --force-fallback-for=libplacebo \
   --prefix="$INSTALL_DIR"
 meson compile -C "$BUILD_DIR/mpv" -j"$JOBS"

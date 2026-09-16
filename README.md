@@ -41,6 +41,8 @@ in the `x64/` folder. No GPL dependency anywhere in the chain (enforced by
 * mpv: `-Dgpl=false -Dcplayer=false`, no `dvdnav/rubberband/openal/jack/oss-audio/caca`,
   no `lua/javascript` (the PR uses `load-scripts=no`), no `libarchive/libbluray/uchardet`,
   no `lcms2/vulkan/spirv-cross/shaderc` (the render API used by the PR is OpenGL).
+  macOS additionally disables `swift-build/macos-media-player/macos-touchbar`
+  (NowPlaying/TouchBar integration, unused by decode-to-texture).
   Legacy `vo_x11/xv/vdpau` are off via `-Dgpl=false` — unused since `vo=libmpv`.
 * ffmpeg: decode-only (`--disable-encoders/muxers/programs/doc`), minimal external libs
   (`libass/freetype/fribidi/fontconfig/harfbuzz/dav1d`); libplacebo is linked by

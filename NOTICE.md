@@ -50,6 +50,9 @@ Windows: single self-contained `libmpv-2.dll` + `libmpv.dll.a` import lib
 mpv-side: `dvdnav`, `rubberband`, `openal`, `jack`, `oss-audio`, `caca`,
 `lua`, `javascript`, `libarchive`, `libbluray`, `uchardet`, `lcms2`, `vulkan`,
 `spirv-cross`, `shaderc`, the `mpv` CLI (`-Dcplayer=false`).
+macOS additionally disables `swift-build`, `macos-media-player`, `macos-touchbar`
+(NowPlaying/TouchBar integration; swiftc can't consume the subproject's
+generated headers, and neither is used by the decode-to-texture path).
 
 ## Sources
 
