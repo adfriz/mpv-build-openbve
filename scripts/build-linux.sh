@@ -95,7 +95,7 @@ meson setup "$BUILD_DIR/mpv" "$MPV_SRC" \
   -Dvulkan=disabled -Dspirv-cross=disabled -Dshaderc=disabled \
   -Ddvdnav=disabled -Drubberband=disabled -Dopenal=disabled \
   -Djack=disabled -Doss-audio=disabled -Dcaca=disabled \
-  -Dpdf-build=disabled -Dtests=disabled \
+  -Dpdf-build=disabled -Dtests=false \
   -Dlua=disabled -Djavascript=disabled \
   -Dlibarchive=disabled -Dlibbluray=disabled -Duchardet=disabled \
   -Dlcms2=disabled -Dgl=auto \
