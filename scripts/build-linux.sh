@@ -17,6 +17,10 @@ JOBS="${JOBS:-$(nproc)}"
 load_versions
 assert_stable_ffmpeg "$FFMPEG_URL"
 
+# -fPIC everywhere: our static archives are linked into a shared libmpv.
+export CFLAGS="${CFLAGS:-} -fPIC -O2"
+export CXXFLAGS="${CXXFLAGS:-} -fPIC -O2"
+
 mkdir -p "$BUILD_DIR" "$INSTALL_DIR" "$STAGING"
 export PKG_CONFIG_PATH="$INSTALL_DIR/lib/pkgconfig:$INSTALL_DIR/lib/x86_64-linux-gnu/pkgconfig:$INSTALL_DIR/lib64/pkgconfig:$INSTALL_DIR/share/pkgconfig:${PKG_CONFIG_PATH:-}"
 
@@ -55,6 +59,7 @@ FFMPEG_CONF=(
   --disable-programs --disable-doc
   --disable-encoders --disable-muxers
   --disable-debug
+  --enable-pic
   --enable-runtime-cpudetect
   --enable-libass --enable-libfreetype --enable-libfribidi --enable-libfontconfig
   --enable-libharfbuzz --enable-libdav1d
@@ -95,9 +100,13 @@ fi
 # (-Dgl=auto on purpose: enabled when GL headers exist, missing header
 #  fails later at the explicit detection check in verify-lgpl.sh.)
 rm -rf "$BUILD_DIR/mpv"
+# NOTE: no --prefer-static here. It forces static pkg-config for EVERY dep,
+# including distro archives that are not -fPIC (Ubuntu libuuid.a), which
+# breaks the final shared link. Our own libs have no .so so they stay static
+# anyway; distro libs link shared and get bundled with $ORIGIN rpath instead.
 meson setup "$BUILD_DIR/mpv" "$MPV_SRC" \
   -Dgpl=false -Dcplayer=false -Dlibmpv=true -Ddefault_library=shared \
-  --prefer-static -Dbuildtype=release \
+  -Dbuildtype=release \
   -Dvulkan=disabled -Dspirv-cross=disabled -Dshaderc=disabled \
   -Ddvdnav=disabled -Drubberband=disabled -Dopenal=disabled \
   -Djack=disabled -Doss-audio=disabled -Dcaca=disabled \

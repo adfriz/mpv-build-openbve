@@ -15,7 +15,8 @@ JOBS="${JOBS:-$(sysctl -n hw.ncpu)}"
 
 export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
 export ARCHFLAGS="-arch x86_64"
-export CFLAGS="${CFLAGS:-} -arch x86_64 -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET"
+export CFLAGS="${CFLAGS:-} -arch x86_64 -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET -fPIC -O2"
+export CXXFLAGS="${CXXFLAGS:-} -arch x86_64 -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET -fPIC -O2"
 export LDFLAGS="${LDFLAGS:-} -arch x86_64 -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET"
 
 if [[ "$(uname -m)" != "x86_64" ]]; then
@@ -60,6 +61,7 @@ FFMPEG_CONF=(
   --disable-programs --disable-doc
   --disable-encoders --disable-muxers
   --disable-debug
+  --enable-pic
   --enable-runtime-cpudetect
   --enable-libass --enable-libfreetype --enable-libfribidi --enable-libfontconfig
   --enable-libharfbuzz --enable-libdav1d
@@ -91,10 +93,11 @@ fi
 # macOS extra disables: swiftc can't see the libplacebo subproject's generated
 # config.h (bridging-header PCH fails). Swift is only used for NowPlaying /
 # TouchBar integration, unused by the decode-to-texture path.
+# No --prefer-static (see build-linux.sh): distro/brew libs must link shared.
 rm -rf "$BUILD_DIR/mpv"
 meson setup "$BUILD_DIR/mpv" "$MPV_SRC" \
   -Dgpl=false -Dcplayer=false -Dlibmpv=true -Ddefault_library=shared \
-  --prefer-static -Dbuildtype=release \
+  -Dbuildtype=release \
   -Dvulkan=disabled -Dspirv-cross=disabled -Dshaderc=disabled \
   -Ddvdnav=disabled -Drubberband=disabled -Dopenal=disabled \
   -Djack=disabled -Doss-audio=disabled -Dcaca=disabled \
