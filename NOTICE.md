@@ -25,7 +25,7 @@ The table below reflects the pins in `VERSIONS` at release time.
 | ffmpeg (decode-only, stable tarball) | `9.0.1` (`ffmpeg-9.0.1.tar.xz`) | LGPL (v3, see above) | static |
 | libass (subtitles) | `0.17.5` (stable tarball) | ISC | static |
 | libplacebo (GPU rendering / hwaccel mapping) | `v7.360.1` (stable tag, meson subproject on Linux/macOS; superbuild on Windows) | LGPL-2.1+ | static |
-| dav1d (AV1 decoder) | distro/brew | BSD-2-Clause | bundled (Linux `.so` / macOS `.dylib`) |
+| dav1d (AV1 decoder) | `1.5.4` (stable tarball) | BSD-2-Clause | static |
 | freetype (font rasterizer, via libass) | distro/brew | FTL / GPL-2+ with font exception | bundled |
 | harfbuzz (text shaping, via libass) | distro/brew | MIT | bundled |
 | fribidi (bidi text, via libass) | distro/brew | LGPL-2.1+ | bundled |

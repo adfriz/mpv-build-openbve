@@ -9,6 +9,8 @@ FFMPEG_URL=https://ffmpeg.org/releases/ffmpeg-9.0.1.tar.xz
 FFMPEG_SHA256=SKIP
 LIBASS_VERSION=0.17.5
 LIBPLACEBO_VERSION=v7.360.1
+DAV1D_VERSION=1.5.4
+DAV1D_URL=https://code.videolan.org/videolan/dav1d/-/archive/1.5.4/dav1d-1.5.4.tar.bz2
 
 # Windows cross-build: zhongfly scripts + shinchiro cmake engine, both pinned.
 # (Upstream restructured in 2026: scripts live in zhongfly/mpv-winbuild,

@@ -12,6 +12,7 @@ load_versions() {
   : "${MPV_VERSION:?MPV_VERSION missing in VERSIONS}"
   : "${FFMPEG_VERSION:?FFMPEG_VERSION missing in VERSIONS}"
   : "${FFMPEG_URL:?FFMPEG_URL missing in VERSIONS}"
+  : "${DAV1D_VERSION:?DAV1D_VERSION missing in VERSIONS}"
 }
 
 # NOTE: log goes to stderr so stdout stays clean for command substitution.
@@ -102,4 +103,17 @@ download_libass_stable() {
   rm -rf "$dest_dir/libass-${version}"
   tar -xzf "$tarball" -C "$dest_dir"
   echo "$dest_dir/libass-${version}"
+}
+
+# Fetch dav1d stable tarball (needs >= 1.0 for ffmpeg 9; distro is too old).
+download_dav1d_stable() {
+  local dest_dir="${1:?dest dir required}" version="${2:?version required}"
+  mkdir -p "$dest_dir"
+  local tarball="$dest_dir/dav1d-${version}.tar.bz2"
+  if [[ ! -f "$tarball" ]]; then
+    curl -fL "https://code.videolan.org/videolan/dav1d/-/archive/${version}/dav1d-${version}.tar.bz2" -o "$tarball"
+  fi
+  rm -rf "$dest_dir/dav1d-${version}"
+  tar -xjf "$tarball" -C "$dest_dir"
+  echo "$dest_dir/dav1d-${version}"
 }

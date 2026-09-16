@@ -32,6 +32,15 @@ if ! pkg-config --exists libass 2>/dev/null; then
   make install
 fi
 
+# --- dav1d: static, from stable tarball (distro 0.9.x < ffmpeg 9 minimum) ---
+log "building dav1d $DAV1D_VERSION (static)"
+DAVSRC="$(download_dav1d_stable "$BUILD_DIR/dl" "$DAV1D_VERSION")"
+cd "$DAVSRC"
+meson setup build --prefix="$INSTALL_DIR" --default-library=static \
+  --buildtype=release -Denable_tools=false -Denable_tests=false
+meson compile -C build -j"$JOBS"
+meson install -C build
+
 # --- ffmpeg: stable tarball, decode-only, LGPL ---
 # Minimal external set: everything else is decoded by ffmpeg natively
 # (h264/hevc/vp8/vp9/aac/mp3/opus/vorbis all have native decoders).
