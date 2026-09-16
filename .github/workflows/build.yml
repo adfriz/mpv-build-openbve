@@ -1,0 +1,143 @@
+name: build-libmpv-lgpl
+
+# Release infra for OpenBVE video-texture libs. Stable pins only (VERSIONS);
+# no tracking of master/nightly anywhere by design.
+on:
+  workflow_dispatch:
+    inputs:
+      mpv_version:
+        description: "Override MPV_VERSION (stable tag, e.g. v0.41.0)"
+        required: false
+        default: ""
+      ffmpeg_version:
+        description: "Override FFMPEG_VERSION (stable, e.g. 9.0.1)"
+        required: false
+        default: ""
+      create_release:
+        description: "Publish GitHub release with 3 separate zips"
+        required: false
+        default: false
+        type: boolean
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  MACOSX_DEPLOYMENT_TARGET: "11.0"
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply version overrides
+        run: |
+          if [ -n "${{ inputs.mpv_version }}" ]; then sed -i -E "s/^MPV_VERSION=.*/MPV_VERSION=${{ inputs.mpv_version }}/" VERSIONS; fi
+          if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s/^FFMPEG_VERSION=.*/FFMPEG_VERSION=${{ inputs.ffmpeg_version }}/" VERSIONS; fi
+          if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s|^FFMPEG_URL=.*|FFMPEG_URL=https://ffmpeg.org/releases/ffmpeg-${{ inputs.ffmpeg_version }}.tar.xz|" VERSIONS; fi
+          cat VERSIONS
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build nasm pkg-config python3 git curl zip patchelf \
+            libfreetype6-dev libfontconfig1-dev libfribidi-dev libharfbuzz-dev \
+            libdav1d-dev liblcms2-dev libxxhash-dev \
+            libgl-dev libepoxy-dev libva-dev libvdpau-dev
+      - name: Build
+        run: bash scripts/build-linux.sh
+      - name: Verify LGPL + stable source
+        run: bash scripts/verify-lgpl.sh linux staging/linux
+      - name: Smoke test
+        run: python3 scripts/smoke-opengl.py staging/linux/x64/libmpv.so.2
+      - name: Package (separate zip)
+        run: bash scripts/package.sh linux staging/linux dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libmpv-lgpl-linux-x64
+          path: dist/libmpv-lgpl-linux-x64.tar.gz*
+
+  build-windows:
+    # Cross-compile Windows DLL on Ubuntu via zhongfly scripts + shinchiro
+    # cmake engine (same proven path as upstream's own LGPL CI job).
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply version overrides
+        run: |
+          if [ -n "${{ inputs.mpv_version }}" ]; then sed -i -E "s/^MPV_VERSION=.*/MPV_VERSION=${{ inputs.mpv_version }}/" VERSIONS; fi
+          if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s/^FFMPEG_VERSION=.*/FFMPEG_VERSION=${{ inputs.ffmpeg_version }}/" VERSIONS; fi
+          cat VERSIONS
+      - name: Install host deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git cmake ninja-build meson nasm yasm gperf ragel \
+            pkg-config python3 curl unzip autoconf automake libtool perl zip
+      - name: Build libmpv-2.dll (LGPL, gcc cross)
+        run: bash scripts/build-windows-lgpl.sh
+      - name: Verify LGPL + stable source
+        run: bash scripts/verify-lgpl.sh windows staging/windows
+      - name: Package (separate zip)
+        run: bash scripts/package.sh windows staging/windows dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libmpv-lgpl-windows-x64
+          path: dist/libmpv-lgpl-windows-x64.zip*
+
+  build-macos-intel:
+    runs-on: macos-15-intel
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply version overrides
+        run: |
+          if [ -n "${{ inputs.mpv_version }}" ]; then sed -i -E "s/^MPV_VERSION=.*/MPV_VERSION=${{ inputs.mpv_version }}/" VERSIONS; fi
+          if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s/^FFMPEG_VERSION=.*/FFMPEG_VERSION=${{ inputs.ffmpeg_version }}/" VERSIONS; fi
+          if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s|^FFMPEG_URL=.*|FFMPEG_URL=https://ffmpeg.org/releases/ffmpeg-${{ inputs.ffmpeg_version }}.tar.xz|" VERSIONS; fi
+          cat VERSIONS
+      - name: Install build tools (NOT brew ffmpeg — GPL, must build from stable source)
+        run: |
+          brew update
+          brew install meson ninja pkg-config nasm autoconf automake libtool \
+            freetype fribidi harfbuzz fontconfig dav1d little-cms2 libepoxy
+      - name: Build (x86_64 only)
+        run: arch -x86_64 bash scripts/build-macos-intel.sh
+      - name: Verify LGPL + Intel-only
+        run: bash scripts/verify-lgpl.sh macos-intel staging/macos-intel
+      - name: Smoke test
+        run: python3 scripts/smoke-opengl.py staging/macos-intel/x64/libmpv.2.dylib
+      - name: Package (separate zip)
+        run: bash scripts/package.sh macos-intel staging/macos-intel dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libmpv-lgpl-macos-intel
+          path: dist/libmpv-lgpl-macos-intel.tar.gz*
+
+  release:
+    needs: [build-linux, build-windows, build-macos-intel]
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.create_release == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: SHA256SUMS
+        run: |
+          cd dist
+          sha256sum libmpv-lgpl-*.zip libmpv-lgpl-*.tar.gz > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/libmpv-lgpl-windows-x64.zip
+            dist/libmpv-lgpl-linux-x64.tar.gz
+            dist/libmpv-lgpl-macos-intel.tar.gz
+            dist/SHA256SUMS.txt
+          body: |
+            LGPL-only libmpv for OpenBVE video-texture (PR #1333).
+            Each platform is a SEPARATE archive.
+            See runtime.json + ffmpeg-configure.txt inside each archive for
+            mpv/ffmpeg stable versions + exact configure flags.

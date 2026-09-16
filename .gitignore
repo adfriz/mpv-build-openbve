@@ -1,0 +1,21 @@
+# build outputs
+build/
+install/
+mpv-winbuild/
+ffmpeg-*/
+*.tar.gz
+*.tar.xz
+*.zip
+# cmake external projects
+*-prefix/
+# staging / dist
+staging/
+dist/
+out/
+# caches
+.ccache/
+downloads/
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

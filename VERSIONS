@@ -1,0 +1,23 @@
+# Pinned stable versions. Bump manually + tag release.
+# ffmpeg MUST be a stable release tarball from https://ffmpeg.org/releases/
+# NEVER use git master / nightly snapshot.
+MPV_VERSION=v0.41.0
+FFMPEG_VERSION=9.0.1
+FFMPEG_URL=https://ffmpeg.org/releases/ffmpeg-9.0.1.tar.xz
+# SHA256 from https://ffmpeg.org/download.html (empty/SKIP = warn only).
+# Fill after first successful download, then keep pinned.
+FFMPEG_SHA256=SKIP
+LIBASS_VERSION=0.17.5
+LIBPLACEBO_VERSION=v7.360.1
+
+# Windows cross-build: zhongfly scripts + shinchiro cmake engine, both pinned.
+# (Upstream restructured in 2026: scripts live in zhongfly/mpv-winbuild,
+#  cmake superbuild in shinchiro/mpv-winbuild-cmake subdir.)
+WINBUILD_SCRIPTS_REPO=https://github.com/zhongfly/mpv-winbuild.git
+WINBUILD_SCRIPTS_REF=6b69eeea6585e8f68e62c7d220668a228e777f05
+WINBUILD_ENGINE_REPO=https://github.com/shinchiro/mpv-winbuild-cmake.git
+WINBUILD_ENGINE_REF=cd1edc11dc6887a50f705717619d879f5a93a488
+
+# Compatibility floors
+MACOSX_DEPLOYMENT_TARGET=11.0
+LINUX_RUNNER=ubuntu-22.04
