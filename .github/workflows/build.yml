@@ -105,7 +105,10 @@ jobs:
         run: |
           mkdir -p build/winbuild/build64/install
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed git ninja cmake meson python nasm yasm gperf ragel pkgconf curl unzip zip perl
+          # NOTE: wget + 7zip are hard requirements of the engine (cppwinrt
+          # install step downloads Windows.winmd via wget). Same set as
+          # upstream's own Arch CI (they also add mimalloc/7zip).
+          pacman -S --noconfirm --needed git ninja cmake meson python nasm yasm gperf ragel pkgconf curl wget unzip zip 7zip perl
           meson --version
           cmake --version | head -1
           gcc --version | head -1
