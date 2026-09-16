@@ -37,8 +37,10 @@ pass "artifacts present ($PLATFORM)"
 CONF="$STAGING/ffmpeg-configure.txt"
 [[ -f "$CONF" ]] || fail_check "missing $CONF (build script must save ffmpeg flags)"
 FORBIDDEN="--enable-gpl|--enable-nonfree|--enable-libx264|--enable-libx265|--enable-librubberband|--enable-libdavs2|--enable-libdvdnav|--enable-libdvdread|--enable-libssh|--enable-libsrt|--enable-libzvbi|--enable-avisynth"
-if grep -Eq "$FORBIDDEN" "$CONF"; then
-  grep -Eoh "$FORBIDDEN" "$CONF" | sort -u >&2 || true
+# NOTE: patterns start with '-', so '--' is mandatory. Without it grep errors
+# out (exit 2) and the LGPL gate would spuriously PASS. Never drop the '--'.
+if grep -Eq -- "$FORBIDDEN" "$CONF"; then
+  grep -Eoh -- "$FORBIDDEN" "$CONF" | sort -u >&2 || true
   fail_check "forbidden GPL ffmpeg flag in $CONF"
 fi
 pass "ffmpeg flags LGPL-clean"
@@ -52,7 +54,20 @@ case "$PLATFORM" in
     grep -q "\-Dgpl=false" "$STAGING/mpv-configure.txt" || fail_check "mpv LGPL flag missing"
     ;;
   linux|macos-intel)
-    grep -q "mpv $MPV_VERSION" "$ROOT/VERSIONS" || fail_check "VERSIONS drift"
+    # mpv: the checked-out source must sit exactly on the pinned tag
+    # (the old check grepped VERSIONS for its own content and could never
+    # match, failing every run).
+    found_mpv=false
+    for src in "$ROOT/build"/mpv-src*; do
+      [[ -d "$src/.git" ]] || continue
+      found_mpv=true
+      tag="$(git -C "$src" describe --tags --exact-match 2>/dev/null || git -C "$src" rev-parse --short HEAD)"
+      [[ "$tag" == "$MPV_VERSION" ]] || fail_check "mpv source at '$tag', expected tag $MPV_VERSION ($src)"
+    done
+    $found_mpv || fail_check "no mpv source checkout found under $ROOT/build"
+    # ffmpeg: the extracted stable tarball dir must carry the pinned version.
+    [[ -n "$(find "$ROOT/build" -maxdepth 3 -type d -name "ffmpeg-$FFMPEG_VERSION" 2>/dev/null | head -1)" ]] \
+      || fail_check "ffmpeg source dir for $FFMPEG_VERSION not found (drift?)"
     ;;
 esac
 pass "stable pins verified"
