@@ -170,7 +170,7 @@ jobs:
           export HOMEBREW_NO_ENV_HINTS=1
           brew update
           brew install meson ninja pkg-config nasm ccache \
-            freetype fribidi harfbuzz fontconfig libepoxy
+            freetype fribidi harfbuzz fontconfig libepoxy libplacebo
       - name: Build (x86_64 only)
         run: arch -x86_64 bash scripts/build-macos-intel.sh
       - name: Verify LGPL + Intel-only

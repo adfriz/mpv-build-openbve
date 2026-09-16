@@ -108,6 +108,11 @@ case "$PLATFORM" in
 esac
 
 # 6. runtime.json for audit
+LIBPLACEBO_VER="$LIBPLACEBO_VERSION"
+if [[ "$PLATFORM" == "macos-intel" ]]; then
+  # macOS uses brew libplacebo (floating); record the actual version.
+  LIBPLACEBO_VER="brew-$(pkg-config --modversion libplacebo 2>/dev/null || echo unknown)"
+fi
 cat > "$STAGING/runtime.json" <<EOF
 {
   "platform": "$PLATFORM",
@@ -116,7 +121,7 @@ cat > "$STAGING/runtime.json" <<EOF
   "ffmpeg_url": "$FFMPEG_URL",
   "ffmpeg_sha256": "${FFMPEG_SHA256:-SKIP}",
   "libass": "$LIBASS_VERSION",
-  "libplacebo": "$LIBPLACEBO_VERSION",
+  "libplacebo": "$LIBPLACEBO_VER",
   "gpl": false,
   "license_mpv": "LGPL-2.1+",
   "license_ffmpeg": "LGPL (v3 if --enable-version3)",

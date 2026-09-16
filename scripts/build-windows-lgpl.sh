@@ -86,11 +86,14 @@ cmake -Wno-dev \
 
 ninja -C "$BUILDD" download || true
 # Toolchain: a restored cache entry may contain absolute paths from another
-# runner layout (poisoned). Verify the compiler actually RUNS; otherwise wipe
-# and rebuild instead of failing 40 minutes later in dep configures.
+# runner layout (poisoned). Verify the compiler actually COMPILES (not just
+# --version); otherwise wipe and rebuild instead of failing 40 minutes later
+# in dep configures.
 toolchain_ok() {
   [[ -f "$BUILDD/install/bin/cross-gcc" ]] && \
-    "$BUILDD/install/bin/cross-gcc" --version >/dev/null 2>&1
+    "$BUILDD/install/bin/cross-gcc" --version >/dev/null 2>&1 && \
+    echo 'int main(void){return 0;}' > "$WORK/hello.c" && \
+    "$BUILDD/install/bin/cross-gcc" -o "$WORK/hello.exe" "$WORK/hello.c" >/dev/null 2>&1
 }
 if [[ "$COMPILER" == "gcc" ]]; then
   if ! toolchain_ok; then

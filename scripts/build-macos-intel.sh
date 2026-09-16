@@ -73,7 +73,10 @@ make -j"$JOBS"
 make install
 
 # --- mpv: stable tag, LGPL lib-only ---
-# libplacebo via pinned-tag subproject (deterministic, not floating brew).
+# NOTE: libplacebo comes from brew here, NOT a pinned subproject like Linux.
+# mpv's Swift/ObjC bridging compile can't see a subproject's generated
+# config.h (same reason swift-build stays enabled: clipboard-mac.m needs the
+# swift-generated swift.h). Brew headers just work, same as upstream CI.
 cd "$ROOT"
 MPV_SRC="$ROOT/build/mpv-src-macos"
 if [[ ! -d "$MPV_SRC/.git" ]]; then
@@ -82,17 +85,11 @@ else
   git -C "$MPV_SRC" fetch -q --depth 1 origin "refs/tags/$MPV_VERSION:refs/tags/$MPV_VERSION" || true
   git -C "$MPV_SRC" checkout -q "$MPV_VERSION"
 fi
-if [[ ! -d "$MPV_SRC/subprojects/libplacebo" ]]; then
-  # --recurse-submodules is required: libplacebo vendors glad (mandatory
-  # for its OpenGL backend) as a submodule; without it meson aborts with
-  # "glad was not found in PYTHONPATH or `3rdparty`".
-  git clone --depth 1 --branch "$LIBPLACEBO_VERSION" --recurse-submodules --shallow-submodules https://github.com/haasn/libplacebo.git "$MPV_SRC/subprojects/libplacebo"
+if [[ -d "$MPV_SRC/subprojects/libplacebo" ]]; then
+  rm -rf "$MPV_SRC/subprojects/libplacebo"
 fi
 
 # meson option names verified against mpv v0.41.0 meson.options.
-# macOS extra disables: swiftc can't see the libplacebo subproject's generated
-# config.h (bridging-header PCH fails). Swift is only used for NowPlaying /
-# TouchBar integration, unused by the decode-to-texture path.
 # No --prefer-static (see build-linux.sh): distro/brew libs must link shared.
 rm -rf "$BUILD_DIR/mpv"
 meson setup "$BUILD_DIR/mpv" "$MPV_SRC" \
@@ -105,8 +102,6 @@ meson setup "$BUILD_DIR/mpv" "$MPV_SRC" \
   -Dlua=disabled -Djavascript=disabled \
   -Dlibarchive=disabled -Dlibbluray=disabled -Duchardet=disabled \
   -Dlcms2=disabled -Dgl=auto \
-  -Dswift-build=disabled -Dmacos-media-player=disabled -Dmacos-touchbar=disabled \
-  --force-fallback-for=libplacebo \
   --prefix="$INSTALL_DIR"
 meson compile -C "$BUILD_DIR/mpv" -j"$JOBS"
 

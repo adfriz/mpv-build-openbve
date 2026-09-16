@@ -15,10 +15,11 @@ Every archive also ships `runtime.json` (mpv/ffmpeg versions + SHA),
 `ffmpeg-configure.txt` (exact configure flags, for LGPL auditing), `NOTICE.md`, `LICENSES/`.
 
 Pinned versions: see `VERSIONS` (`mpv v0.41.0`, `ffmpeg 9.0.1` stable tarball,
-`libass 0.17.5`, `libplacebo v7.360.1` built as a subproject).
+`libass 0.17.5`, `libplacebo v7.360.1` (meson subproject on Linux, brew on macOS).
 
-Linking model: `ffmpeg + libass + libplacebo` are always **statically** linked
-into `libmpv`; remaining distro libs (freetype/harfbuzz/dav1d/…) are **bundled**
+Linking model: `ffmpeg + libass` are always **statically** linked into `libmpv`
+(`libplacebo` too, except on macOS where the brew dylib is bundled);
+remaining distro libs (freetype/harfbuzz/dav1d/…) are **bundled** remaining distro libs (freetype/harfbuzz/dav1d/…) are **bundled**
 in the `x64/` folder. No GPL dependency anywhere in the chain (enforced by
 `verify-lgpl.sh`).
 
@@ -41,8 +42,6 @@ in the `x64/` folder. No GPL dependency anywhere in the chain (enforced by
 * mpv: `-Dgpl=false -Dcplayer=false`, no `dvdnav/rubberband/openal/jack/oss-audio/caca`,
   no `lua/javascript` (the PR uses `load-scripts=no`), no `libarchive/libbluray/uchardet`,
   no `lcms2/vulkan/spirv-cross/shaderc` (the render API used by the PR is OpenGL).
-  macOS additionally disables `swift-build/macos-media-player/macos-touchbar`
-  (NowPlaying/TouchBar integration, unused by decode-to-texture).
   Legacy `vo_x11/xv/vdpau` are off via `-Dgpl=false` — unused since `vo=libmpv`.
 * ffmpeg: decode-only (`--disable-encoders/muxers/programs/doc`), minimal external libs
   (`libass/freetype/fribidi/fontconfig/harfbuzz/dav1d`); libplacebo is linked by
