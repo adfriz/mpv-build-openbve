@@ -18,6 +18,10 @@ on:
         required: false
         default: false
         type: boolean
+      tag_name:
+        description: "Tag name for manual release (required when create_release=true)"
+        required: false
+        default: ""
   push:
     tags: ["v*"]
 
@@ -93,6 +97,7 @@ jobs:
         run: |
           if [ -n "${{ inputs.mpv_version }}" ]; then sed -i -E "s/^MPV_VERSION=.*/MPV_VERSION=${{ inputs.mpv_version }}/" VERSIONS; fi
           if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s/^FFMPEG_VERSION=.*/FFMPEG_VERSION=${{ inputs.ffmpeg_version }}/" VERSIONS; fi
+          if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s|^FFMPEG_URL=.*|FFMPEG_URL=https://ffmpeg.org/releases/ffmpeg-${{ inputs.ffmpeg_version }}.tar.xz|" VERSIONS; fi
           cat VERSIONS
       - name: Restore toolchain cache (gcc cross, slowest part of cold builds)
         uses: actions/cache@v4
@@ -201,7 +206,9 @@ jobs:
 
   release:
     needs: [build-linux, build-windows, build-macos-intel]
-    if: startsWith(github.ref, 'refs/tags/v') || inputs.create_release == true
+    # Manual dispatch without tag_name would fail inside gh-release with a
+    # cryptic "no tag" error; guard here instead with a clear skip.
+    if: startsWith(github.ref, 'refs/tags/v') || (inputs.create_release == true && inputs.tag_name != '')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -215,6 +222,8 @@ jobs:
           cat SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:
+          # On tag pushes inputs.tag_name is empty; fall back to the pushed tag.
+          tag_name: ${{ inputs.tag_name || github.ref_name }}
           files: |
             dist/libmpv-lgpl-windows-x64.zip
             dist/libmpv-lgpl-linux-x64.tar.gz
