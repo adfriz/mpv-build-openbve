@@ -55,14 +55,14 @@ FFSRC="$(download_ffmpeg_stable "$BUILD_DIR/dl")"
 cd "$FFSRC"
 FFMPEG_CONF=(
   --prefix="$INSTALL_DIR"
-  --pkg-config-flags=--static
+  # NOTE: no --pkg-config-flags=--static (see build-linux.sh): our own libs
+  # stay static anyway, distro libs link shared and get bundled instead.
   --disable-programs --disable-doc
   --disable-encoders --disable-muxers
   --disable-debug
   --enable-runtime-cpudetect
   --enable-libass --enable-libfreetype --enable-libfribidi --enable-libfontconfig
   --enable-libharfbuzz --enable-libdav1d
-  --enable-version3
   --enable-version3
 )
 printf '%s\n' "${FFMPEG_CONF[@]}" > "$STAGING/ffmpeg-configure.txt"

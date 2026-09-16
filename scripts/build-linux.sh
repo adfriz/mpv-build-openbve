@@ -48,7 +48,10 @@ FFSRC="$(download_ffmpeg_stable "$BUILD_DIR/dl")"
 cd "$FFSRC"
 FFMPEG_CONF=(
   --prefix="$INSTALL_DIR"
-  --pkg-config-flags=--static
+  # NOTE: no --pkg-config-flags=--static. Our own libs (ffmpeg/libass/dav1d)
+  # only exist as .a so they stay static anyway; forcing distro libs static
+  # breaks the final shared link (e.g. Ubuntu's libuuid.a is not -fPIC).
+  # Distro libs link shared and get bundled with $ORIGIN rpath instead.
   --disable-programs --disable-doc
   --disable-encoders --disable-muxers
   --disable-debug
