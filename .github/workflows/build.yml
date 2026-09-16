@@ -109,7 +109,12 @@ jobs:
           # NOTE: wget + 7zip are hard requirements of the engine (cppwinrt
           # install step downloads Windows.winmd via wget). Same set as
           # upstream's own Arch CI (they also add mimalloc/7zip).
-          pacman -S --noconfirm --needed git ninja cmake meson python nasm yasm gperf ragel pkgconf curl wget unzip zip 7zip perl mimalloc
+          # NOTE: do NOT install mimalloc/jemalloc here. The engine's top
+          # CMakeLists auto-detects /usr/lib/libmimalloc.so and bakes
+          # LD_PRELOAD=<that> into build64/exec for EVERY toolchain step;
+          # the run that added it died one stage earlier (crt-configure)
+          # than all runs without it. Empty LD_PRELOAD is the safe default.
+          pacman -S --noconfirm --needed git ninja cmake meson python nasm yasm gperf ragel pkgconf curl wget unzip zip 7zip perl
           meson --version
           cmake --version | head -1
           gcc --version | head -1
