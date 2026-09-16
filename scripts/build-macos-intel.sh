@@ -81,7 +81,10 @@ else
   git -C "$MPV_SRC" checkout -q "$MPV_VERSION"
 fi
 if [[ ! -d "$MPV_SRC/subprojects/libplacebo" ]]; then
-  git clone --depth 1 --branch "$LIBPLACEBO_VERSION" https://github.com/haasn/libplacebo.git "$MPV_SRC/subprojects/libplacebo"
+  # --recurse-submodules is required: libplacebo vendors glad (mandatory
+  # for its OpenGL backend) as a submodule; without it meson aborts with
+  # "glad was not found in PYTHONPATH or `3rdparty`".
+  git clone --depth 1 --branch "$LIBPLACEBO_VERSION" --recurse-submodules --shallow-submodules https://github.com/haasn/libplacebo.git "$MPV_SRC/subprojects/libplacebo"
 fi
 
 # meson option names verified against mpv v0.41.0 meson.options.
