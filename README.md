@@ -59,7 +59,7 @@ in the `x64/` folder. No GPL dependency anywhere in the chain (enforced by
 ```bash
 bash scripts/build-linux.sh        # ubuntu-22.04
 arch -x86_64 bash scripts/build-macos-intel.sh  # macos-15-intel
-bash scripts/build-windows-lgpl.sh # cross-compile Windows DLL on ubuntu-22.04
+bash scripts/build-windows-lgpl.sh # cross-compile Windows DLL (Arch container, like upstream CI)
 bash scripts/verify-lgpl.sh linux staging/linux
 python3 scripts/smoke-opengl.py staging/linux/x64/libmpv.so.2
 bash scripts/package.sh linux staging/linux dist

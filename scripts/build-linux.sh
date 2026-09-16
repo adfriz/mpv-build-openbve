@@ -18,7 +18,7 @@ load_versions
 assert_stable_ffmpeg "$FFMPEG_URL"
 
 mkdir -p "$BUILD_DIR" "$INSTALL_DIR" "$STAGING"
-export PKG_CONFIG_PATH="$INSTALL_DIR/lib/pkgconfig:$INSTALL_DIR/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+export PKG_CONFIG_PATH="$INSTALL_DIR/lib/pkgconfig:$INSTALL_DIR/lib/x86_64-linux-gnu/pkgconfig:$INSTALL_DIR/lib64/pkgconfig:$INSTALL_DIR/share/pkgconfig:${PKG_CONFIG_PATH:-}"
 
 log "mpv=$MPV_VERSION ffmpeg=$FFMPEG_VERSION libass=$LIBASS_VERSION placebo=$LIBPLACEBO_VERSION"
 

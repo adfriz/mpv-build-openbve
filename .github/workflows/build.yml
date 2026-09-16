@@ -80,10 +80,13 @@ jobs:
           path: dist/libmpv-lgpl-linux-x64.tar.gz*
 
   build-windows:
-    # Cross-compile Windows DLL on Ubuntu via zhongfly scripts + shinchiro
-    # cmake engine (same proven path as upstream's own LGPL CI job).
+    # Cross-compile Windows DLL. Host MUST be Arch (same as upstream's own
+    # CI): the engine is developed against rolling host tools and dep
+    # configures fail on Ubuntu 22.04's older toolchain.
     runs-on: ubuntu-22.04
     timeout-minutes: 360
+    container:
+      image: ghcr.io/archlinux/archlinux:base-devel
     steps:
       - uses: actions/checkout@v4
       - name: Apply version overrides
@@ -99,19 +102,28 @@ jobs:
       - name: Install host deps
         run: |
           mkdir -p build/winbuild/build64/install
-          sudo apt-get update
-          sudo apt-get install -y git cmake ninja-build nasm yasm gperf ragel \
-            pkg-config python3 python3-pip curl unzip autoconf automake libtool perl zip
-          pip3 install -U meson
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed git ninja cmake meson python nasm yasm gperf ragel pkgconf curl unzip zip perl
           meson --version
+          cmake --version | head -1
+          gcc --version | head -1
       - name: Build libmpv-2.dll (LGPL, gcc cross)
         run: bash scripts/build-windows-lgpl.sh
       - name: Verify LGPL + stable source
         run: bash scripts/verify-lgpl.sh windows staging/windows
       - name: Package (separate zip)
         run: bash scripts/package.sh windows staging/windows dist
+      - name: Collect failure logs
+        if: always()
+        run: |
+          mkdir -p winlogs
+          find build/winbuild/build64 -type f -name "*.log" 2>/dev/null | head -60 | while IFS= read -r f; do { echo "===== $f"; tail -n 25 "$f"; echo; }; done > winlogs/tails.txt || true
+          wc -l winlogs/tails.txt || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: winbuild-logs
+          path: winlogs/
       - uses: actions/upload-artifact@v4
         with:
           name: libmpv-lgpl-windows-x64

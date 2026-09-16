@@ -26,7 +26,7 @@ load_versions
 assert_stable_ffmpeg "$FFMPEG_URL"
 
 mkdir -p "$BUILD_DIR" "$INSTALL_DIR" "$STAGING"
-export PKG_CONFIG_PATH="$INSTALL_DIR/lib/pkgconfig:$INSTALL_DIR/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+export PKG_CONFIG_PATH="$INSTALL_DIR/lib/pkgconfig:$INSTALL_DIR/lib/x86_64-linux-gnu/pkgconfig:$INSTALL_DIR/lib64/pkgconfig:$INSTALL_DIR/share/pkgconfig:${PKG_CONFIG_PATH:-}"
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 log "mpv=$MPV_VERSION ffmpeg=$FFMPEG_VERSION placebo=$LIBPLACEBO_VERSION target=$MACOSX_DEPLOYMENT_TARGET x86_64"
