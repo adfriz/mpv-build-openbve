@@ -97,10 +97,11 @@ jobs:
       - name: Restore toolchain cache (gcc cross, slowest part of cold builds)
         uses: actions/cache@v4
         with:
-          # NOTE: key includes runner family on purpose. Toolchain installs
-          # embed absolute paths and are NOT relocatable across layouts.
+          # NOTE: key is arch-container-specific on purpose. Toolchain installs
+          # embed absolute paths and are NOT relocatable across layouts
+          # (a cache saved by ubuntu-native runs must never restore here).
           path: build/winbuild/build64/install
-          key: win-toolchain-arch-x64-gcc-v2-${{ hashFiles('VERSIONS') }}
+          key: win-toolchain-archcontainer-x64-gcc-v3-${{ hashFiles('VERSIONS') }}
       - name: Install host deps
         run: |
           mkdir -p build/winbuild/build64/install
@@ -108,7 +109,7 @@ jobs:
           # NOTE: wget + 7zip are hard requirements of the engine (cppwinrt
           # install step downloads Windows.winmd via wget). Same set as
           # upstream's own Arch CI (they also add mimalloc/7zip).
-          pacman -S --noconfirm --needed git ninja cmake meson python nasm yasm gperf ragel pkgconf curl wget unzip zip 7zip perl
+          pacman -S --noconfirm --needed git ninja cmake meson python nasm yasm gperf ragel pkgconf curl wget unzip zip 7zip perl mimalloc
           meson --version
           cmake --version | head -1
           gcc --version | head -1
@@ -122,7 +123,14 @@ jobs:
         if: always()
         run: |
           mkdir -p winlogs
-          find build/winbuild/build64 \( -path "*stamp/*.log" -o -name "config.log" -o -name "meson-log.txt" \) -type f 2>/dev/null | head -60 | while IFS= read -r f; do { echo "===== $f"; tail -n 25 "$f"; echo; }; done > winlogs/tails.txt || true
+          LOGS=$(find build/winbuild/build64 \( -path "*stamp/*.log" -o -name "config.log" -o -name "meson-log.txt" \) -type f 2>/dev/null | sort)
+          echo "$LOGS" > winlogs/files.txt || true
+          # NOTE: *-err.log files print FIRST (they hold the actual failure)
+          # with longer tails; the old head/print caps used to bury them.
+          { echo "$LOGS" | grep -E -- "-err\.log$" || true; echo "$LOGS" | grep -vE -- "-err\.log$" || true; } | while IFS= read -r f; do
+            n=15; case "$f" in *-err.log) n=80;; esac
+            { echo "===== $f"; tail -n "$n" "$f"; echo; }
+          done > winlogs/tails.txt || true
           wc -l winlogs/tails.txt || true
       - name: Print log tails on failure
         if: failure()
