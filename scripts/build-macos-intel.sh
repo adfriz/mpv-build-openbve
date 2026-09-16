@@ -61,7 +61,8 @@ FFMPEG_CONF=(
   --disable-debug
   --enable-runtime-cpudetect
   --enable-libass --enable-libfreetype --enable-libfribidi --enable-libfontconfig
-  --enable-libharfbuzz --enable-libdav1d --enable-libplacebo
+  --enable-libharfbuzz --enable-libdav1d
+  --enable-version3
   --enable-version3
 )
 printf '%s\n' "${FFMPEG_CONF[@]}" > "$STAGING/ffmpeg-configure.txt"

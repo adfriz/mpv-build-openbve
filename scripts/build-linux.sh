@@ -54,8 +54,11 @@ FFMPEG_CONF=(
   --disable-debug
   --enable-runtime-cpudetect
   --enable-libass --enable-libfreetype --enable-libfribidi --enable-libfontconfig
-  --enable-libharfbuzz --enable-libdav1d --enable-libplacebo
+  --enable-libharfbuzz --enable-libdav1d
   --enable-version3
+  # NOTE: no --enable-libplacebo on purpose: libplacebo is linked by mpv
+  # directly (pinned-tag meson subproject). ffmpeg's own libplacebo support
+  # is only the vf_libplacebo filter, unused by this decode path.
   # NOTE: intentionally NO --enable-gpl --enable-nonfree --enable-libx264
   # --enable-libx265 --enable-librubberband --enable-libdavs2
   # --enable-libdvdnav --enable-libdvdread --enable-libssh --enable-libsrt

@@ -43,7 +43,8 @@ in the `x64/` folder. No GPL dependency anywhere in the chain (enforced by
   no `lcms2/vulkan/spirv-cross/shaderc` (the render API used by the PR is OpenGL).
   Legacy `vo_x11/xv/vdpau` are off via `-Dgpl=false` — unused since `vo=libmpv`.
 * ffmpeg: decode-only (`--disable-encoders/muxers/programs/doc`), minimal external libs
-  (`libass/freetype/fribidi/fontconfig/harfbuzz/dav1d/placebo`); everything else
+  (`libass/freetype/fribidi/fontconfig/harfbuzz/dav1d`); libplacebo is linked by
+  mpv directly (pinned subproject), not via ffmpeg; everything else
   uses ffmpeg native decoders (h264/hevc/vp8/vp9/aac/mp3/opus/vorbis). **Without**
   `--enable-gpl/nonfree/libx264/libx265/librubberband/libdavs2/libdvdnav/libdvdread/
   libssh/libsrt/libzvbi/avisynth`.

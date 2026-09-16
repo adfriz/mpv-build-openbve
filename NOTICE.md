@@ -24,7 +24,7 @@ The table below reflects the pins in `VERSIONS` at release time.
 | mpv (`-Dgpl=false -Dcplayer=false -Dlibmpv=true`) | `v0.41.0` (stable tag) | LGPL-2.1+ | the library itself |
 | ffmpeg (decode-only, stable tarball) | `9.0.1` (`ffmpeg-9.0.1.tar.xz`) | LGPL (v3, see above) | static |
 | libass (subtitles) | `0.17.5` (stable tarball) | ISC | static |
-| libplacebo (GPU rendering / hwaccel mapping) | `v7.360.1` (stable tag, meson subproject on Linux/macOS; superbuild on Windows) | LGPL-2.1+ | static |
+| libplacebo (GPU rendering / hwaccel mapping, linked by mpv directly) | `v7.360.1` (stable tag, meson subproject on Linux/macOS; superbuild on Windows) | LGPL-2.1+ | static |
 | dav1d (AV1 decoder) | `1.5.4` (stable tarball) | BSD-2-Clause | static |
 | freetype (font rasterizer, via libass) | distro/brew | FTL / GPL-2+ with font exception | bundled |
 | harfbuzz (text shaping, via libass) | distro/brew | MIT | bundled |
