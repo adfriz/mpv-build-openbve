@@ -30,6 +30,13 @@ env:
 jobs:
   build-linux:
     runs-on: ubuntu-22.04
+    timeout-minutes: 240
+    env:
+      CC: ccache gcc
+      CXX: ccache g++
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 2G
+      CCACHE_BASEDIR: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4
       - name: Apply version overrides
@@ -38,10 +45,18 @@ jobs:
           if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s/^FFMPEG_VERSION=.*/FFMPEG_VERSION=${{ inputs.ffmpeg_version }}/" VERSIONS; fi
           if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s|^FFMPEG_URL=.*|FFMPEG_URL=https://ffmpeg.org/releases/ffmpeg-${{ inputs.ffmpeg_version }}.tar.xz|" VERSIONS; fi
           cat VERSIONS
+      - name: Restore ccache (auto-saved at job end, even on failure)
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-linux-${{ hashFiles('VERSIONS') }}
+          restore-keys: |
+            ccache-linux-
       - name: Install deps
         run: |
+          mkdir -p .ccache
           sudo apt-get update
-          sudo apt-get install -y ninja-build nasm pkg-config python3 python3-pip git curl zip patchelf \
+          sudo apt-get install -y ninja-build nasm pkg-config python3 python3-pip git curl zip patchelf ccache \
             libfreetype6-dev libfontconfig1-dev libfribidi-dev libharfbuzz-dev \
             libxxhash-dev \
             libgl-dev libepoxy-dev libva-dev libvdpau-dev
@@ -76,8 +91,14 @@ jobs:
           if [ -n "${{ inputs.mpv_version }}" ]; then sed -i -E "s/^MPV_VERSION=.*/MPV_VERSION=${{ inputs.mpv_version }}/" VERSIONS; fi
           if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s/^FFMPEG_VERSION=.*/FFMPEG_VERSION=${{ inputs.ffmpeg_version }}/" VERSIONS; fi
           cat VERSIONS
+      - name: Restore toolchain cache (gcc cross, slowest part of cold builds)
+        uses: actions/cache@v4
+        with:
+          path: build/winbuild/build64/install
+          key: win-toolchain-x64-gcc-${{ hashFiles('VERSIONS') }}
       - name: Install host deps
         run: |
+          mkdir -p build/winbuild/build64/install
           sudo apt-get update
           sudo apt-get install -y git cmake ninja-build nasm yasm gperf ragel \
             pkg-config python3 python3-pip curl unzip autoconf automake libtool perl zip
@@ -99,6 +120,12 @@ jobs:
   build-macos-intel:
     runs-on: macos-15-intel
     timeout-minutes: 240
+    env:
+      CC: ccache clang
+      CXX: ccache clang++
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 2G
+      CCACHE_BASEDIR: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4
       - name: Apply version overrides
@@ -107,14 +134,22 @@ jobs:
           if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s/^FFMPEG_VERSION=.*/FFMPEG_VERSION=${{ inputs.ffmpeg_version }}/" VERSIONS; fi
           if [ -n "${{ inputs.ffmpeg_version }}" ]; then sed -i -E "s|^FFMPEG_URL=.*|FFMPEG_URL=https://ffmpeg.org/releases/ffmpeg-${{ inputs.ffmpeg_version }}.tar.xz|" VERSIONS; fi
           cat VERSIONS
+      - name: Restore ccache (auto-saved at job end, even on failure)
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-macos-intel-${{ hashFiles('VERSIONS') }}
+          restore-keys: |
+            ccache-macos-intel-
       - name: Install build tools (NOT brew ffmpeg — GPL, must build from stable source)
         run: |
+          mkdir -p .ccache
           # No bottle support left for Intel: keep the formula list minimal and
           # never let brew upgrade unrelated dependents from source (very slow).
           export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
           export HOMEBREW_NO_ENV_HINTS=1
           brew update
-          brew install meson ninja pkg-config nasm \
+          brew install meson ninja pkg-config nasm ccache \
             freetype fribidi harfbuzz fontconfig libepoxy
       - name: Build (x86_64 only)
         run: arch -x86_64 bash scripts/build-macos-intel.sh
