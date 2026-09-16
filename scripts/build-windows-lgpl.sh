@@ -96,6 +96,11 @@ if [[ "$COMPILER" == "gcc" ]]; then
   if ! toolchain_ok; then
     log "gcc toolchain missing or not runnable, (re)building"
     rm -rf "$BUILDD/install"
+    # gcc-wrapper's build step creates symlinks inside install/bin/ but never
+    # creates that dir itself. On a truly fresh tree the step fails with
+    # "failed to create symbolic link ... No such file or directory"
+    # (upstream only survives this via warm caches holding install/bin/).
+    mkdir -p "$BUILDD/install/bin" "$BUILDD/install/x86_64-w64-mingw32/lib"
     ninja -C "$BUILDD" gcc && rm -rf "$BUILDD/toolchain"
     toolchain_ok || fail "fresh gcc toolchain still not runnable"
   else
