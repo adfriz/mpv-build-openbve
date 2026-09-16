@@ -97,8 +97,10 @@ jobs:
       - name: Restore toolchain cache (gcc cross, slowest part of cold builds)
         uses: actions/cache@v4
         with:
+          # NOTE: key includes runner family on purpose. Toolchain installs
+          # embed absolute paths and are NOT relocatable across layouts.
           path: build/winbuild/build64/install
-          key: win-toolchain-x64-gcc-${{ hashFiles('VERSIONS') }}
+          key: win-toolchain-arch-x64-gcc-v2-${{ hashFiles('VERSIONS') }}
       - name: Install host deps
         run: |
           mkdir -p build/winbuild/build64/install
@@ -119,6 +121,9 @@ jobs:
           mkdir -p winlogs
           find build/winbuild/build64 -type f -name "*.log" 2>/dev/null | head -60 | while IFS= read -r f; do { echo "===== $f"; tail -n 25 "$f"; echo; }; done > winlogs/tails.txt || true
           wc -l winlogs/tails.txt || true
+      - name: Print log tails on failure
+        if: failure()
+        run: head -c 60000 winlogs/tails.txt || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:

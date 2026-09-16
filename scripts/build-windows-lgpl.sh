@@ -85,8 +85,22 @@ cmake -Wno-dev \
   -G Ninja -S "$ENGINE" -B "$BUILDD"
 
 ninja -C "$BUILDD" download || true
-if [[ "$COMPILER" == "gcc" ]] && [[ ! -f "$BUILDD/install/bin/cross-gcc" ]]; then
-  ninja -C "$BUILDD" gcc && rm -rf "$BUILDD/toolchain"
+# Toolchain: a restored cache entry may contain absolute paths from another
+# runner layout (poisoned). Verify the compiler actually RUNS; otherwise wipe
+# and rebuild instead of failing 40 minutes later in dep configures.
+toolchain_ok() {
+  [[ -f "$BUILDD/install/bin/cross-gcc" ]] && \
+    "$BUILDD/install/bin/cross-gcc" --version >/dev/null 2>&1
+}
+if [[ "$COMPILER" == "gcc" ]]; then
+  if ! toolchain_ok; then
+    log "gcc toolchain missing or not runnable, (re)building"
+    rm -rf "$BUILDD/install"
+    ninja -C "$BUILDD" gcc && rm -rf "$BUILDD/toolchain"
+    toolchain_ok || fail "fresh gcc toolchain still not runnable"
+  else
+    log "reusing working cached gcc toolchain"
+  fi
 elif [[ "$COMPILER" == "clang" ]] && [[ ! "$(ls -A "$WORK/clang_root/bin/clang" 2>/dev/null)" ]]; then
   ninja -C "$BUILDD" llvm && ninja -C "$BUILDD" llvm-clang
 fi
