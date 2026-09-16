@@ -72,17 +72,28 @@ case "$PLATFORM" in
 esac
 pass "stable pins verified"
 
-# 4. GL backend must have been detected (PR needs OPENGL render API).
-# Meson prints "Run-time dependency gl found: YES" in meson-log.txt.
+# 4. GL render path must be compiled in (PR needs OPENGL render API).
+# NOTE: mpv has NO dependency('gl') lookup on Linux — the libmpv GL path
+# comes via plain-gl and only compiles video/out/opengl/libmpv_gl.c. So the
+# evidence is the object file + the exported render symbol, never a
+# "Run-time dependency gl found" meson line (it cannot exist on Linux).
 if [[ "$PLATFORM" != "windows" ]]; then
-  MLOG="$(find "$ROOT/build" -path "*meson-logs/meson-log.txt" 2>/dev/null | head -1)"
+  MLOG="$(find "$ROOT/build" -path "*/mpv/meson-logs/meson-log.txt" 2>/dev/null | head -1)"
   if [[ -n "${MLOG:-}" ]]; then
-    grep -Eq "Run-time dependency gl found: YES" "$MLOG" || fail_check "GL backend not detected (OPENGL render API at risk). See $MLOG"
-    grep -Eq "Run-time dependency libplacebo found: YES" "$MLOG" || fail_check "libplacebo not found. See $MLOG"
-    pass "GL + libplacebo detected by meson"
+    grep -Eq -- "Run-time dependency libplacebo found: YES" "$MLOG" || fail_check "libplacebo not found. See $MLOG"
+    pass "libplacebo detected by meson"
   else
-    echo "[verify][WARN] meson-log.txt not found, skipping detection check" >&2
+    echo "[verify][WARN] mpv meson-log.txt not found, skipping placebo check" >&2
   fi
+  [[ -n "$(find "$ROOT/build" -name "*libmpv_gl.c.o" 2>/dev/null | head -1)" ]] \
+    || fail_check "GL backend not compiled (video/out/opengl/libmpv_gl.c missing)"
+  case "$PLATFORM" in
+    linux) nm -D --defined-only "$LIB" | grep -q " mpv_render_context_create$" \
+      || fail_check "mpv_render_context_create not exported" ;;
+    macos-intel) nm -gU "$LIB" 2>/dev/null | grep -q " _mpv_render_context_create$" \
+      || fail_check "mpv_render_context_create not exported" ;;
+  esac
+  pass "GL backend compiled + render API exported"
 fi
 
 # 5. Linked-deps sanity on the STAGED lib (+ bundling depth checks)

@@ -101,7 +101,7 @@ meson setup "$BUILD_DIR/mpv" "$MPV_SRC" \
   -Dpdf-build=disabled -Dtests=false \
   -Dlua=disabled -Djavascript=disabled \
   -Dlibarchive=disabled -Dlibbluray=disabled -Duchardet=disabled \
-  -Dlcms2=disabled -Dgl=auto \
+  -Dlcms2=disabled -Dgl=enabled \
   --prefix="$INSTALL_DIR"
 meson compile -C "$BUILD_DIR/mpv" -j"$JOBS"
 

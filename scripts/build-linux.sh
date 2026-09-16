@@ -97,8 +97,11 @@ if [[ ! -d "$MPV_SRC/subprojects/libplacebo" ]]; then
 fi
 
 # meson option names verified against mpv v0.41.0 meson.options.
-# (-Dgl=auto on purpose: enabled when GL headers exist, missing header
-#  fails later at the explicit detection check in verify-lgpl.sh.)
+# -Dgl=enabled is upstream's default: it hard-fails if NO gl backend exists.
+# Note the libmpv render path needs no system GL headers on Linux — it comes
+# via plain-gl ("OpenGL without platform-specific code (e.g. for libmpv)"),
+# which only needs gl itself allowed. There is no dependency('gl') lookup on
+# Linux, so never gate on a "gl found: YES" meson line (it can't exist).
 rm -rf "$BUILD_DIR/mpv"
 # NOTE: no --prefer-static here. It forces static pkg-config for EVERY dep,
 # including distro archives that are not -fPIC (Ubuntu libuuid.a), which
@@ -113,7 +116,7 @@ meson setup "$BUILD_DIR/mpv" "$MPV_SRC" \
   -Dpdf-build=disabled -Dtests=false \
   -Dlua=disabled -Djavascript=disabled \
   -Dlibarchive=disabled -Dlibbluray=disabled -Duchardet=disabled \
-  -Dlcms2=disabled -Dgl=auto \
+  -Dlcms2=disabled -Dgl=enabled \
   --force-fallback-for=libplacebo \
   --prefix="$INSTALL_DIR"
 meson compile -C "$BUILD_DIR/mpv" -j"$JOBS"
